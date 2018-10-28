@@ -1,0 +1,8 @@
+{application, anvl_make,
+ [{description, "Compiles erlang files to beams"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [kernel, stdlib, snabbkaffe]},
+  {env,[]},
+  {modules, []}
+ ]}.

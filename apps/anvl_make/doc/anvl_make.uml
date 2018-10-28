@@ -1,0 +1,45 @@
+@startuml
+participant task1
+participant anvl_make
+database done_tab
+participant task2
+
+activate task1
+activate anvl_make
+activate done_tab
+
+group want(Target1)
+  task1 ->> done_tab : lookup(Target1)
+  task1 <<- done_tab : [Result1]
+end
+
+group want(Target2)
+  task1 ->> done_tab : lookup(Target2)
+  task1 <<- done_tab : []
+
+  task1 -> anvl_make : {want, Target2}
+    deactivate task1
+
+    anvl_make ->> done_tab : lookup(Target2)
+    anvl_make <<- done_tab : []
+
+    note over anvl_make
+      check if task is
+      already in progress
+    end note
+
+    anvl_make --\ task2 : spawn
+
+    activate task2
+
+    ...
+
+       task2 -> anvl_make : provide([{Target2, Result2}])
+          anvl_make ->> done_tab : insert(Target2, Result2)
+          anvl_make -> task1 : Result
+          activate task1
+       task2 -> anvl_make : complete(self())
+    destroy task2
+end
+
+@enduml

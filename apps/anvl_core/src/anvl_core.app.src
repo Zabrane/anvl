@@ -1,0 +1,19 @@
+{application, anvl_core,
+ [{description, "An OTP application"},
+  {vsn, "git"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib,
+    lee,
+    bbmustache,
+    hut,
+    snabbkaffe,
+    anvl_make
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
