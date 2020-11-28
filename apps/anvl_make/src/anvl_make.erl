@@ -7,9 +7,9 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
--export([start_link/1, want/1, provide/1]).
+-export([start_link/0, want/1, provide/1]).
 
--export_type([tag/0, target/0, provider/0, providers/0]).
+-export_type([tag/0, target/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -23,9 +23,7 @@
 
 -type tag() :: atom().
 
--type target() :: {tag(), _Args}.
-
--type provider() :: {tag(), fun((_) -> _)}.
+-type target() :: mfa().
 
 -type from() :: {pid(), _Tag}.
 
@@ -36,11 +34,8 @@
 
 -type promises() :: #{target() => #promise{}}.
 
--type providers() :: #{tag() => fun((_) -> _)}.
-
 -record(s,
-        { providers      :: providers()
-        , promises = #{} :: promises()
+        { promises = #{} :: promises()
         , workers  = #{} :: #{pid() => boolean()}
         }).
 
@@ -60,42 +55,37 @@ want(Target) ->
   end.
 
 %% @doc Satisfy dependencies
--spec provide([{target(), term()}]) -> ok.
+-spec provide([target()]) -> ok.
 provide(Targets) ->
   gen_server:cast(?SERVER, {provide, Targets}).
 
 %% @doc Starts the server
--spec start_link([provider()] | providers()) -> {ok, Pid :: pid()} |
+-spec start_link() -> {ok, Pid :: pid()} |
         {error, Error :: {already_started, pid()}} |
         {error, Error :: term()} |
         ignore.
-start_link(Providers) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, Providers, []).
+start_link() ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init(Providers0) ->
+init([]) ->
   process_flag(trap_exit, true),
   ets:new(?DONE_TAB, [protected, named_table]),
-  Providers = if is_list(Providers0) ->
-                  maps:from_list(Providers0);
-                 is_map(Providers0) ->
-                  Providers0
-              end,
-  {ok, #s{providers = Providers}}.
+  {ok, #s{}}.
 
-handle_call({complete, Pid}, _From, State0 = #s{workers = Workers}) ->
-  unlink(Pid),
-  State = State0#s{workers = maps:remove(Pid, Workers)},
-  check_progress(State),
-  {reply, ok, State};
 handle_call({want, Target}, From, State) ->
   do_want(Target, From, State);
 handle_call(_Request, _From, State) ->
   {reply, {error, unknown_call}, State}.
 
+handle_cast({complete, Pid}, State0 = #s{workers = Workers}) ->
+  unlink(Pid),
+  State = State0#s{workers = maps:remove(Pid, Workers)},
+  %check_progress(State),
+  {noreply, State};
 handle_cast({provide, Targets}, State0) ->
   State = lists:foldl(fun resolve_target/2, State0, Targets),
   {noreply, State};
@@ -107,7 +97,7 @@ handle_info({'EXIT', Pid, Reason}, State) ->
     true ->
       handle_failure(Pid, Reason, State);
     false ->
-      {stop, Reason, State}
+      {noreply, State}
   end;
 handle_info(_Info, State) ->
   {noreply, State}.
@@ -127,13 +117,12 @@ do_want(Target, From = {Pid, _}, State0) ->
       %% Handle a race condition:
       {reply, Result, State0};
     [] ->
-      #s{ providers = Providers
-        , workers   = Workers0
+      #s{ workers   = Workers0
         , promises  = Promises0
         } = State0,
       %% Try to find or spawn a worker for `Target':
       Promise = #promise{worker = Worker} =
-        maybe_spawn_worker(Target, From, Promises0, Providers),
+        maybe_spawn_worker(Target, From, Promises0),
       Promises = Promises0 #{Target => Promise},
       %% Add new worker to the active worker set:
       Workers1 = if is_pid(Worker) ->
@@ -160,45 +149,37 @@ resolve_target(Entry = {Target, Result}, State0) ->
   [gen_server:reply(From, Result) || From <- Waiting],
   State0#s{promises = Promises}.
 
--spec maybe_spawn_worker(target(), from(), promises(), providers()) ->
+-spec maybe_spawn_worker(target(), from(), promises()) ->
         #promise{}.
-maybe_spawn_worker(Target, From, Promises, Providers) ->
-  {Tag, Args} = Target,
+maybe_spawn_worker(Target, From, Promises) ->
   case Promises of
     #{Target := Promise0 = #promise{waiting = Waiting}} ->
       Promise0#promise{waiting = [From|Waiting]};
     _ ->
-      Worker = case Providers of
-                 #{Tag := Fun} -> spawn_worker(Fun, Tag, Args);
-                 _             -> undefined
-               end,
+      Worker = spawn_worker(Target),
       #promise{ worker = Worker
               , waiting = [From]
               }
   end.
 
--spec spawn_worker(fun((_) -> _), tag(), _Args) -> pid().
-spawn_worker(Fun, Tag, Args) ->
+-spec spawn_worker(target()) -> pid().
+spawn_worker(Target = {Module, Function, Args}) ->
   spawn_link(fun() ->
-                 ?set_process_metadata(#{ domain => [anvl, target, Tag]
-                                        , target => {Tag, Args}
-                                        }),
+                 ?set_process_metadata(#{domain => [anvl, target, Module, Function]}),
                  ?tp(anvl_spawn_task,
-                     #{ target => Tag
-                      , args   => Args
+                     #{ target => Target
                       }),
-                 Ret = Fun(Args),
-                 provide([{{Tag, Args}, Ret}]),
+                 Ret = apply(Module, Function, Args),
                  ?tp(anvl_complete_task,
-                     #{ target => Tag
-                      , args   => Args
+                     #{ target => Target
                       }),
+                 provide([{Target, Ret}]),
                  complete(self())
              end).
 
 -spec complete(pid()) -> ok.
 complete(Pid) ->
-  gen_server:call(?SERVER, {complete, Pid}).
+  gen_server:cast(?SERVER, {complete, Pid}).
 
 -spec handle_failure(pid(), _Reason, #s{}) -> {stop, _}.
 handle_failure(Pid, Reason, State) ->

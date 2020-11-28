@@ -3,7 +3,7 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 -include_lib("stdlib/include/assert.hrl").
 
--export([dependency_test/0]).
+-compile(export_all).
 
 dependency_test() ->
   %% Tasks:
@@ -19,9 +19,7 @@ dependency_test() ->
      #{timeout => 0},
      %% Run stage:
      begin
-       anvl_make:start_link(#{ foo => fun mk_foo/1
-                             , bar => fun mk_bar/1
-                             }),
+       anvl_make:start_link(),
        anvl_make:want(Foo1),
        anvl_make:want(Foo3),
        ok
@@ -30,18 +28,19 @@ dependency_test() ->
      fun(_Ret, Trace) ->
          anvl_trace_specs:all_tasks_complete(Trace),
          anvl_trace_specs:all_tasks_ran_once(Trace),
-         anvl_trace_specs:tasks_started([Foo1, Foo2, Foo3, Bar1], Trace)
+         anvl_trace_specs:tasks_started([Foo1, Foo2, Foo3, Bar1], Trace),
+         anvl_trace_specs:check_dependencies(Deps, Trace)
      end).
 
 %% Targets:
 foo(Id, Deps) ->
-  {foo, {Id, Deps}}.
+  {?MODULE, mk_foo, [Id, Deps]}.
 
 bar(Id) ->
-  {bar, Id}.
+  {?MODULE, mk_bar, [Id]}.
 
 %% Providers:
-mk_foo({Id, Deps}) ->
+mk_foo(Id, Deps) ->
   [anvl_make:want(I) || I <- Deps],
   ?tp(make_target, #{kind => foo, id => Id, deps => Deps}).
 
