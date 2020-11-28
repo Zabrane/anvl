@@ -3,7 +3,7 @@ CONCUERROR := $(BUILD_DIR)/Concuerror/bin/concuerror
 CONCUERROR_RUN := $(CONCUERROR) \
 	-x code -x code_server -x error_handler \
 	--treat_as_normal shutdown --treat_as_normal normal \
-	--pa $(BUILD_DIR)/concuerror+test/checkouts/snabbkaffe/ebin \
+	--pa $(BUILD_DIR)/concuerror+test/lib/snabbkaffe/ebin \
 	--pa $(BUILD_DIR)/concuerror+test/lib/anvl_make/test \
   --pa $(BUILD_DIR)/concuerror+test/lib/anvl_make/ebin
 

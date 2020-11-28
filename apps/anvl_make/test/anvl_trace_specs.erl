@@ -29,9 +29,11 @@ all_tasks_ran_once(Trace) ->
                             , Trace
                             )).
 
--spec check_dependencies([{_Id, _Id}], snabbkaffe:trace()) -> true.
+-spec check_dependencies([{anvl_make:target(), anvl_make:target()}], snabbkaffe:trace()) -> true.
 check_dependencies(Deps, Trace) ->
-  %% [?strict_causality( #{?snk_kind := anvl_complete_task, target := }
-  %%    )
-  %%  || {{Src, , Dep} <- Deps],
+  [?strict_causality( #{?snk_kind := anvl_complete_task, target := Dep}
+                    , #{?snk_kind := anvl_complete_task, target := Src}
+                    , Trace
+                    )
+   || {Src, Dep} <- Deps],
   true.
