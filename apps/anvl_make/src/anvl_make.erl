@@ -23,7 +23,7 @@
 
 -type tag() :: atom().
 
--type target() :: mfa().
+-type target() :: {module(), atom(), list()}.
 
 -type from() :: {pid(), _Tag}.
 
@@ -55,7 +55,7 @@ want(Target) ->
   end.
 
 %% @doc Satisfy dependencies
--spec provide([target()]) -> ok.
+-spec provide([{target(), term()}]) -> ok.
 provide(Targets) ->
   gen_server:cast(?SERVER, {provide, Targets}).
 

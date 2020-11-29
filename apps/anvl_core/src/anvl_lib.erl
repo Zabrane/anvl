@@ -105,15 +105,8 @@ metamodel() ->
 
 -spec render_template(lee:key()) -> string().
 render_template(Key) ->
-  {ok, Ret} =
-    lee_server:run_t(
-      fun(Model, Data) ->
-          Template = lee_server:get(Key),
-          %% Should always return {ok, _} since the temolate is
-          %% validated:
-          render_template(Model, Data, Template)
-      end),
-  Ret.
+  Template = ?cfg(Key),
+  render_template(?anvl_cfg_model_storage, ?anvl_cfg_data_storage, Template).
 
 -spec render_dir(lee:key()) -> file:filename().
 render_dir(Key) ->

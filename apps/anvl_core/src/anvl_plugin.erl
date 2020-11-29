@@ -3,8 +3,7 @@
 -include("anvl.hrl").
 
 -export([ builtin_plugins/0
-        , providers/1
-        , seed/1
+        , root_targets/1
         , plugins/0
         ]).
 
@@ -28,8 +27,8 @@
 %% Returns model of the project configuration:
 -callback project_model() -> lee:module().
 
-%% Return a list of providers defined in the plugin:
--callback providers() -> [provider()].
+%% Parse configuration and return list of top-level targets
+-callback root_targets() -> [anvl_make:target()].
 
 %%%===================================================================
 %%% API functions
@@ -39,14 +38,9 @@
 builtin_plugins() ->
   [anvl_core, anvl_compile].
 
--spec providers(plugin()) -> [provider()].
-providers(Plugin) ->
-  Plugin:providers().
-
--spec seed(plugin()) -> anvl_core:digraph().
-seed(Plugin) ->
-  Seeds = [P:seed() || P <- providers(Plugin)],
-  anvl_lib:merge_digraphs(Seeds).
+-spec root_targets(plugin()) -> [provider()].
+root_targets(Plugin) ->
+  Plugin:root_targets().
 
 %% @doc List available plugins
 -spec plugins() -> [plugin()].

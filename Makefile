@@ -8,7 +8,7 @@ CONCUERROR_RUN := $(CONCUERROR) \
   --pa $(BUILD_DIR)/concuerror+test/lib/anvl_make/ebin
 
 .PHONY: all
-all: doc build concuerror_test
+all: doc build
 
 .PHONY: build
 build:

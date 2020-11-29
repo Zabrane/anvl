@@ -4,7 +4,16 @@
 
 -behavior(anvl_plugin).
 
--export([model/0, project_model/0, providers/0]).
+%% anvl_plugin callbacks:
+-export([model/0, project_model/0, root_targets/0]).
+
+%% Targets:
+-export([compile_app/1, do_compile_app/1]).
+
+
+%%%===================================================================
+%%% anvl_plugin callbacks
+%%%===================================================================
 
 model() ->
   Model =
@@ -33,5 +42,20 @@ project_model() ->
          }}
    }.
 
-providers() ->
-  [].
+root_targets() ->
+  AppsL = ?list_cfg([?MODULE, action, ?children]),
+  [compile_app(App)
+   || Apps <- AppsL
+    , App  <- Apps].
+
+%%%===================================================================
+%%% API
+%%%===================================================================
+
+-spec compile_app(anvl_core:app_id()) -> anvl_make:target().
+compile_app(App) ->
+  {?MODULE, do_compile_app, [App]}.
+
+-spec do_compile_app(anvl_core:app_id()) -> ok.
+do_compile_app(App) ->
+  ?log(notice, "Compiling ~p", [App]).

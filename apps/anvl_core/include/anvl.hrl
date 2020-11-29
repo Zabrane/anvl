@@ -10,18 +10,21 @@
         , data       :: term()
         }).
 
--define(cfg(A), lee_server:get_d(A)).
+%% TODO: Triple hack!
+-define(anvl_cfg_model_storage,
+        {lee_tree, lee_persistent_term_storage, anvl_cfg_model_storage}).
 
--define(cfg_template(A), anvl_lib:render_template(A)).
+-define(anvl_cfg_data_storage,
+        {lee_tree, lee_persistent_term_storage, anvl_cfg_data_storage}).
 
--define(cfg_dir(A), anvl_lib:render_dir(A)).
--define(cfg_dirs(A), anvl_lib:render_dirs(A)).
+-define(cfg(KEY), lee:get(?anvl_cfg_model_storage, ?anvl_cfg_data_storage, KEY)).
 
--define(mk_task(Id, Data, Resources),
-        anvl_provider:make_task(?MODULE, Id, Data, Resources)).
+-define(list_cfg(KEY), lee:list(?anvl_cfg_model_storage, ?anvl_cfg_data_storage, KEY)).
 
--define(mk_task(Id, Data),
-        mk_task(Id, Data, [])).
+-define(cfg_template(KEY), anvl_lib:render_template(KEY)).
+
+-define(cfg_dir(KEY), anvl_lib:render_dir(KEY)).
+-define(cfg_dirs(KEY), anvl_lib:render_dirs(KEY)).
 
 -define(root_project, root).
 

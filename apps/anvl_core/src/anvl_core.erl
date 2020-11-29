@@ -3,15 +3,15 @@
 -behavior(anvl_plugin).
 -compile({no_auto_import, [halt/1]}).
 
--include("anvl_int.hrl").
-
 -export([ main/1
         , panic/2
         , model/0
         , metamodel/0
         , project_model/0
-        , providers/0
+        , root_targets/0
         ]).
+
+-include("anvl_int.hrl").
 
 %%%===================================================================
 %%% Types
@@ -104,10 +104,19 @@ project_model() ->
            }}
      , overrides =>
          {[value],
-          #{ onliner => "TODO: not implemented"
+          #{ oneliner => "TODO: not implemented"
            , type => overrides()
            , default => []
            , file_key => overrides
+           }}
+     , default_targets =>
+         {[value],
+          #{ oneliner => "List of default targets that will be executed when no target is given"
+           , type => list({atom(), atom(), list()})
+           , default => [ {anvl_compile, compile, []}
+                        , {anvl_dialyzer, dialyze, []}
+                        ]
+           , file_key => default_targets
            }}
      %% , package_id =>
      %%     {[value],
@@ -129,7 +138,7 @@ model() ->
                                 ]),
   Model.
 
-providers() ->
+root_targets() ->
   [].
 
 %%%===================================================================
@@ -139,10 +148,7 @@ providers() ->
 -spec main([string()]) -> no_return().
 main(Opts) ->
   try
-    InterfaceModules = ?base_interface_modules ++
-      anvl_plugin:plugins(),
-    application:set_env(lee, interface_modules, InterfaceModules),
-    application:ensure_all_started(anvl_core),
+    InterfaceModules = ?base_interface_modules ++ anvl_plugin:plugins(),
     read_global_config(Opts),
     maybe_show_help_and_exit(),
     set_logger_settings(),
@@ -192,22 +198,22 @@ global_config_model() ->
          , os_env => "ANVL_CACHE_DIR"
          , doc_remark => "Default value is platform-dependent."
          }}
-   , parallel_tasks =>
-       {[value, cli_param],
-        #{ oneliner => "Limit the number of parallel jobs"
-         , type => non_neg_integer()
-         , default => 0
-         , cli_short => "j"
-         , doc_remark => "0 denotes unlimited"
-         }}
-   , keep_going =>
-       {[value, cli_param],
-        #{ oneliner => "Keep scheduling new tasks after failure is detected"
-         , type => boolean()
-         , default => false
-         , cli_operand => "keep-going"
-         , cli_short => "K"
-         }}
+   %% , parallel_tasks =>
+   %%     {[value, cli_param],
+   %%      #{ oneliner => "Limit the number of parallel jobs"
+   %%       , type => non_neg_integer()
+   %%       , default => 0
+   %%       , cli_short => "j"
+   %%       , doc_remark => "0 denotes unlimited"
+   %%       }}
+   %% , keep_going =>
+   %%     {[value, cli_param],
+   %%      #{ oneliner => "Keep scheduling new tasks after failure is detected"
+   %%       , type => boolean()
+   %%       , default => false
+   %%       , cli_operand => "keep-going"
+   %%       , cli_short => "K"
+   %%       }}
    , always_make =>
        {[value, cli_param],
         #{ oneliner => "Unconditionally make all targets"
@@ -216,20 +222,20 @@ global_config_model() ->
          , cli_operand => "always-make"
          , cli_short => "B"
          }}
-   , show_top =>
-       {[value, cli_param],
-        #{ oneliner => "Show statistics about execution time of different tasks"
-         , type => boolean()
-         , default => false
-         , cli_operand => "top"
-         }}
-   , show_depgraph =>
-       {[value, cli_param],
-        #{ oneliner => "Generate dependency graph in dot format"
-         , type => boolean()
-         , default => false
-         , cli_operand => "depgraph"
-         }}
+   %% , show_top =>
+   %%     {[value, cli_param],
+   %%      #{ oneliner => "Show statistics about execution time of different tasks"
+   %%       , type => boolean()
+   %%       , default => false
+   %%       , cli_operand => "top"
+   %%       }}
+   %% , show_depgraph =>
+   %%     {[value, cli_param],
+   %%      #{ oneliner => "Generate dependency graph in dot format"
+   %%       , type => boolean()
+   %%       , default => false
+   %%       , cli_operand => "depgraph"
+   %%       }}
    , verbosity =>
        {[value, cli_param],
        #{ onliner => "Verbosity of console output"
@@ -288,7 +294,11 @@ anvl_main(Opts) ->
             , event_manager  => anvl_event
             },
   ?log(debug, "task_graph options: ~p", [TGOpts]),
-  anvl_make:start_link([]),
+  anvl_make:start_link(),
+  Plugins = anvl_plugin:plugins(),
+  [anvl_make:want(Target)
+   || Plugin <- Plugins,
+      Target <- anvl_plugin:root_targets(Plugin)],
   ok.
 
 -spec read_global_config([string()]) -> ok.
