@@ -11,11 +11,9 @@
 %%% Type definitions
 %%%===================================================================
 
--type provider() :: module().
-
 -type plugin() :: anvl_core:app_id().
 
--reflect_type([plugin/0, provider/0]).
+-reflect_type([plugin/0]).
 
 %%%===================================================================
 %%% Callback definitions
@@ -38,7 +36,7 @@
 builtin_plugins() ->
   [anvl_core, anvl_compile].
 
--spec root_targets(plugin()) -> [provider()].
+-spec root_targets(plugin()) -> [anvl_make:target()].
 root_targets(Plugin) ->
   Plugin:root_targets().
 

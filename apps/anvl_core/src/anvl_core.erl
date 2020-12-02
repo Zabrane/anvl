@@ -282,7 +282,6 @@ set_logger_settings() ->
 
 -spec anvl_main([string()]) -> ok | error.
 anvl_main(Opts) ->
-  ?log(debug, "Configuration dump: ~p", [lee_server:dump()]),
   ensure_work_dirs(),
   Resources = case ?cfg([parallel_tasks]) of
                 0 -> #{};
@@ -342,7 +341,7 @@ read_project_config(Package, ProjectDir) ->
 
 -spec change_config(fun()) -> ok.
 change_config(Transaction) ->
-  case lee_server:patch(Transaction) of
+  case anvl_config:patch(Transaction) of
     ok ->
       ok;
     {error, Err0} ->
@@ -396,10 +395,10 @@ merged_project_model() ->
 
 -spec ensure_work_dirs() -> ok.
 ensure_work_dirs() ->
-  WorkDir = ?cfg_dir([?proj, anvl_core, base_dir]),
-  CacheDir = ?cfg_dir([cache_dir]),
-  Dirs = [ filename:join(WorkDir, "bin")
-         , filename:join(WorkDir, "lib")
-         ],
-  lists:foreach(fun anvl_lib:ensure_dir/1, Dirs),
+  %% WorkDir = ?cfg_dir([?proj, anvl_core, base_dir]),
+  %% CacheDir = ?cfg_dir([cache_dir]),
+  %% Dirs = [ filename:join(WorkDir, "bin")
+  %%        , filename:join(WorkDir, "lib")
+  %%        ],
+  %% lists:foreach(fun anvl_lib:ensure_dir/1, Dirs),
   ok.
