@@ -125,7 +125,7 @@ project_model() ->
      , plugins =>
          {[value],
          #{ oneliner => "List of anvl plugins"
-           , type => list(anvl_plugin:plugin())
+           , type => list(anvl:plugin())
            , default => []
            , file_key => anvl_plugins
            , doc_remark => "Anvl plugins are incompatible with the rebar3 providers"

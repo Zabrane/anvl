@@ -4,16 +4,14 @@
 
 -export([ builtin_plugins/0
         , root_targets/1
+        , model/1
+        , project_model/1
         , plugins/0
         ]).
 
 %%%===================================================================
 %%% Type definitions
 %%%===================================================================
-
--type plugin() :: anvl_core:app_id().
-
--reflect_type([plugin/0]).
 
 %%%===================================================================
 %%% Callback definitions
@@ -32,16 +30,24 @@
 %%% API functions
 %%%===================================================================
 
--spec builtin_plugins() -> [plugin()].
+-spec builtin_plugins() -> [anvl:plugin()].
 builtin_plugins() ->
-  [anvl_core, anvl_compile].
+  [anvl_core_plugin, anvl_compile].
 
--spec root_targets(plugin()) -> [anvl_make:target()].
+-spec root_targets(anvl:plugin()) -> [anvl_make:target()].
 root_targets(Plugin) ->
   Plugin:root_targets().
 
+-spec model(anvl:plugin()) -> lee_model:module().
+model(Plugin) ->
+  Plugin:model().
+
+-spec project_model(anvl:plugin()) -> lee_model:module().
+project_model(Plugin) ->
+  Plugin:project_model().
+
 %% @doc List available plugins
--spec plugins() -> [plugin()].
+-spec plugins() -> [anvl:plugin()].
 plugins() ->
   %% TODO
   builtin_plugins().

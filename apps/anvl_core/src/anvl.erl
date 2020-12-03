@@ -1,5 +1,8 @@
 -module(anvl).
 
+-export([ panic/2
+        ]).
+
 -export_type([ profile/0
              , app_id/0
              , package_id/0
@@ -8,6 +11,7 @@
              , maybe/1
              , log_level/0
              , overrides/0
+             , plugin/0
              ]).
 
 %%%===================================================================
@@ -15,6 +19,8 @@
 %%%===================================================================
 
 -include("anvl_int.hrl").
+
+-type plugin() :: atom().
 
 -type profile() :: atom().
 
@@ -36,5 +42,9 @@
 
 -reflect_type([ overrides/0, optional/1, maybe/1, app_id/0
               , package_id/0, profile/0, log_level/0, props/0
-              , props/2
+              , props/2, plugin/0
               ]).
+
+-spec panic(string(), term()) -> no_return().
+panic(Format, Args) ->
+  exit({panic, Format, Args}).

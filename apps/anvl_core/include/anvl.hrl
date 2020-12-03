@@ -10,16 +10,9 @@
         , data       :: term()
         }).
 
-%% TODO: Triple hack!
--define(anvl_cfg_model_storage,
-        {lee_tree, lee_persistent_term_storage, anvl_cfg_model_storage}).
+-define(cfg(KEY), anvl_config:get(KEY)).
 
--define(anvl_cfg_data_storage,
-        {lee_tree, lee_persistent_term_storage, anvl_cfg_data_storage}).
-
--define(cfg(KEY), lee:get(?anvl_cfg_model_storage, ?anvl_cfg_data_storage, KEY)).
-
--define(list_cfg(KEY), lee:list(?anvl_cfg_model_storage, ?anvl_cfg_data_storage, KEY)).
+-define(list_cfg(KEY), anvl_config:list_cfg(KEY)).
 
 -define(cfg_template(KEY), anvl_lib:render_template(KEY)).
 

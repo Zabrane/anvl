@@ -94,15 +94,6 @@
 %%                      )]
 %%   end.
 
-%% metamodel() ->
-%%   #{ metatype =>
-%%        #{ mustache =>
-%%             {[metatype],
-%%              #{ validate_node => fun validate_template/4
-%%               }}
-%%         }
-%%    }.
-
 %% -spec render_template(lee:key()) -> string().
 %% render_template(Key) ->
 %%   Template = ?cfg(Key),
