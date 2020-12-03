@@ -64,24 +64,19 @@ halt(Code) ->
   application:stop(kernel),
   init:stop(Code).
 
--ifdef(OTP_RELEASE).
-%% OTP21+ Yay, we have `logger':
 set_logger_settings() ->
   logger:set_primary_config(#{ level => ?cfg([verbosity])
                              , filter_default => log
                              }).
--else.
-set_logger_settings() ->
-    application:set_env(hut, level, ?cfg([verbosity])).
--endif.
 
 -spec anvl_main([string()]) -> ok | error.
 anvl_main(Opts) ->
   ensure_work_dirs(),
   anvl_make:start_link(),
-  [anvl_make:want(Target)
-   || Plugin <- anvl_plugin:plugins(),
-      Target <- anvl_plugin:root_targets(Plugin)],
+  Targets = lists:flatmap(fun anvl_plugin:root_targets/1, anvl_plugin:plugins()),
+  ?log(debug, "Targets to execute: ~p", [Targets]),
+  Out = [anvl_make:want(I) || I <- Targets],
+  ?log(debug, "Target results: ~p", [Out]),
   ok.
 
 -spec maybe_show_help_and_exit() -> ok.

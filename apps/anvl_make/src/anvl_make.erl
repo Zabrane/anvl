@@ -165,7 +165,7 @@ maybe_spawn_worker(Target, From, Promises) ->
 -spec spawn_worker(target()) -> pid().
 spawn_worker(Target = {Module, Function, Args}) ->
   spawn_link(fun() ->
-                 ?set_process_metadata(#{domain => [anvl, target, Module, Function]}),
+                 %logger:update_process_metadata(#{domain => [anvl, target, Module]}),
                  ?tp(anvl_spawn_task,
                      #{ target => Target
                       }),

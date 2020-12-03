@@ -44,9 +44,7 @@ project_model() ->
 
 root_targets() ->
   AppsL = ?list_cfg([?MODULE, action, ?children]),
-  [compile_app(App)
-   || Apps <- AppsL
-    , App  <- Apps].
+  [compile_app(App) || App <- AppsL].
 
 %%%===================================================================
 %%% API
