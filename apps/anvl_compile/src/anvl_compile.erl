@@ -25,7 +25,7 @@ model() ->
           #{ apps =>
                {[value, cli_positional],
                 #{ oneliner => "List of apps that should be compiled"
-                 , type     => list(anvl_core:app_id())
+                 , type     => list(anvl:app_id())
                  , cli_arg_position => rest
                  }}
            }}
