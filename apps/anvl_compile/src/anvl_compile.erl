@@ -34,7 +34,7 @@ model() ->
 
 project_model() ->
   #{ erl_opts =>
-       {[value],
+       {[value, rebar, anvl],
         #{ oneliner => "Options passed to erlc"
          , type     => list()
          , default  => []

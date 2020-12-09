@@ -30,7 +30,7 @@ render_template(Template) when is_binary(Template) ->
                             ),
         throw(Err);
       F(Str0, N) ->
-        case bbmustache:render(Str0, GetterFun, [{escape_fun, EscapeFun}]) of
+        case bbmustache:render(Str0, GetterFun, Options) of
           Str0 -> %% Fixpoint reached
             binary_to_list(Str0);
           Str1 ->

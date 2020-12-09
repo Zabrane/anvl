@@ -20,9 +20,15 @@
 main(Opts) ->
   try
     anvl_config:init(),
+    %% Load configuration:
     anvl_config:read_global_config(Opts),
+    ProjectDir = ?cfg_dir([?proj, anvl_core_plugin, root_dir]),
+    anvl_config:read_project_config(ProjectDir),
+    %% Execute special commands if needed:
     maybe_show_help_and_exit(),
+    exec_hacking_commands(),
     set_logger_settings(),
+    %% Execute targets:
     anvl_main(Opts),
     ?log(notice, "Build success", []),
     halt(0)
@@ -36,8 +42,8 @@ main(Opts) ->
     EC:Err:Stack ->
       ?log( critical
           , "Uncaught ~p in ~p: ~p~n"
+            "Please report this bug~n"
             "Stacktrace: ~p~n"
-            "Please report this bug"
           , [EC, ?MODULE, Err, Stack]
           ),
       halt(1)
@@ -49,6 +55,10 @@ metamodel() ->
             {[metatype],
              #{ validate_node => fun(_, _, _, _) -> {[], []} end %fun validate_template/4
               }}
+        , anvl =>
+            {[metatype], #{}}
+        , rebar =>
+            {[metatype], #{}}
         }
    }.
 
@@ -73,7 +83,7 @@ anvl_main(Opts) ->
   anvl_make:start_link(),
   Targets = lists:flatmap(fun anvl_plugin:root_targets/1, anvl_plugin:plugins()),
   ?log(debug, "Targets to execute: ~p", [Targets]),
-  Out = [anvl_make:want(I) || I <- Targets],
+  Out = anvl_make:wants(Targets),
   ?log(debug, "Target results: ~p", [Out]),
   ok.
 
@@ -96,3 +106,28 @@ ensure_work_dirs() ->
          %% , filename:join(WorkDir, "lib")
          ],
   lists:foreach(fun anvl_lib:ensure_dir/1, Dirs).
+
+-spec exec_hacking_commands() -> ok.
+exec_hacking_commands() ->
+  case ?list_cfg([hacking, model, ?children]) of
+    [K] ->
+      ?cfg(K ++ [dump]) andalso
+        ?tp(notice, anvl_dump_model,
+            #{ model => anvl_config:get_model()
+             });
+    [] -> ok
+  end,
+  case ?list_cfg([hacking, config, ?children]) of
+    [L] ->
+      ?cfg(L ++ [dump]) andalso
+        ?tp(notice, anvl_dump_config,
+            #{ config => anvl_config:dump()
+             });
+    [] -> ok
+  end,
+  case ?list_cfg([hacking, docs, ?children]) of
+    [_] ->
+      ?log(notice, "Generating documentation", []),
+      anvl_config:mk_doc();
+    [] -> ok
+  end.

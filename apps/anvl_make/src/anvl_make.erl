@@ -7,7 +7,7 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
--export([parallel/1, start_link/0, want/1, provide/1]).
+-export([parallel/1, start_link/0, want/1, wants/1, provide/1]).
 
 -export_type([tag/0, target/0]).
 
@@ -79,6 +79,15 @@ want(Target) ->
     [] ->
       gen_server:call(?SERVER, {want, Target}, infinity)
   end.
+
+%% @doc Block execution of the process until multiple dependencies are
+%% satisfied. Return the list of return values of each dependency in
+%% order
+-spec wants([target()]) -> [term()].
+wants(Targets) ->
+  Results = parallel([fun() -> want(I) end
+                      || I <- Targets]),
+  lists:map(fun({ok, Result}) -> Result end, Results).
 
 %% @doc Satisfy dependencies
 -spec provide([{target(), term()}]) -> ok.

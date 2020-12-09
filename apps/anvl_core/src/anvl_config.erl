@@ -2,9 +2,12 @@
 
 -export([ init/0
         , read_global_config/1
+        , read_project_config/1
         , get_model/0
         , get/1
         , list_cfg/1
+        , dump/0
+        , mk_doc/0
         ]).
 
 %% Use metamodels defined in the following modules:
@@ -39,9 +42,41 @@ get(Key) ->
 list_cfg(Key) ->
   lee:list(get_model(), ?anvl_cfg_data_storage, Key).
 
+-spec dump() -> lee:patch().
+dump() ->
+  lee_storage:dump(?anvl_cfg_data_storage).
+
+-spec mk_doc() -> ok.
+mk_doc() ->
+  lee_doc:make_docs(get_model(), doc_options()).
+
+-spec get_model() -> lee:model().
+get_model() ->
+  persistent_term:get(anvl_model).
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
+-spec doc_options() -> lee_doc:doc_options().
+doc_options() ->
+  MTs = [ os_env
+        , cli_param
+        , {consult, #{ filter      => [rebar]
+                     , config_name => "rebar.config"
+                     }}
+        , {consult, #{ filter      => [anvl]
+                     , config_name => "anvl.conf"
+                     }}
+        , value
+        ],
+  Config = #{ metatypes  => MTs
+            , run_pandoc => true
+            , app_name   => "ANVL"
+            %% , introduction => "<para>Anvl is a novel build system for Erlang
+            %%                    with focus on parallelism and user friendliness
+            %%                    </para>"
+            }.
 
 -spec load_model() -> ok.
 load_model() ->
@@ -51,9 +86,6 @@ load_model() ->
                     [anvl_plugin:model(I) || I <- anvl_plugin:plugins()]],
   {ok, Model} = lee_model:compile(MetaModelFragments, ModelFragments),
   persistent_term:put(anvl_model, Model).
-
-get_model() ->
-  persistent_term:get(anvl_model).
 
 -spec merged_project_model() -> lee:module().
 merged_project_model() ->
@@ -71,6 +103,29 @@ read_global_config(Opts) ->
   catch _:{error, Err} -> % I don't remember WTH I did it like this
       anvl:panic(Err, [])
   end.
+
+-spec read_project_config(file:path()) -> ok.
+read_project_config(Path) ->
+  RebarConfig = filename:join(Path, "rebar.config"),
+  AnvlConfig = filename:join(Path, "anvl.config"),
+  Files = case {filelib:is_regular(RebarConfig),
+                filelib:is_regular(AnvlConfig)} of
+            {true, true} ->
+              [{RebarConfig, [rebar]}, {AnvlConfig, [anvl]}];
+            {true, false} ->
+              [{RebarConfig, [rebar]}];
+            {false, true} ->
+              [{AnvlConfig, [anvl]}];
+            {false, false} ->
+              anvl:panic("Project configuration is not found in ~s", [Path])
+          end,
+  Patch = lists:flatmap(fun({Filename, Filter}) ->
+                            ?log(debug, "Reading project configuration from ~p", [Filename]),
+                            lee_consult:read(get_model(), Filename, Filter)
+                        end,
+                        Files),
+  ?log(debug, "Project config dump: ~p", Patch),
+  patch(Patch).
 
 %% -spec read_project_config(anvl:package_id(), filelib:dirname()) -> ok.
 %% read_project_config(Package, ProjectDir) ->
@@ -114,8 +169,7 @@ patch_project_model(Plugin, Module0) ->
                             {[consult | MT], MV, Children}
                         end
                       , Module0),
-  lee:namespace([Plugin], Module1).
-
+  lee:namespace([project, Plugin], Module1).
 
 -spec patch(lee:patch()) -> ok.
 patch(Patch) ->

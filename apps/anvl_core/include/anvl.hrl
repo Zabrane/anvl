@@ -4,6 +4,7 @@
 -include_lib("hut/include/hut.hrl").
 -include_lib("lee/include/lee.hrl").
 -include_lib("typerefl/include/types.hrl").
+-include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 -record(td_task,
         { provider   :: module()
@@ -21,8 +22,6 @@
 
 -define(root_project, root).
 
--define(proj(Project), project, ?lcl(Project)).
-
--define(proj, ?proj(?root_project)).
+-define(proj, project).
 
 -endif.
