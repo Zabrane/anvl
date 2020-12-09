@@ -43,7 +43,8 @@ project_model() ->
    }.
 
 root_targets() ->
-  AppsL = ?list_cfg([?MODULE, action, ?children]),
+  Keys = ?list_cfg([?MODULE, action, ?children]),
+  AppsL = [?cfg(Key ++ [apps]) || Key <- Keys],
   [compile_app(App) || App <- AppsL].
 
 %%%===================================================================

@@ -16,8 +16,8 @@
 
 -define(cfg_template(KEY), anvl_lib:render_template(KEY)).
 
--define(cfg_dir(KEY), anvl_lib:render_dir(KEY)).
--define(cfg_dirs(KEY), anvl_lib:render_dirs(KEY)).
+-define(cfg_dir(KEY), anvl_lib:render_dir(?cfg(KEY))).
+-define(cfg_dirs(KEY), anvl_lib:render_dirs(?cfg(KEY))).
 
 -define(root_project, root).
 

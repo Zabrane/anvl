@@ -23,13 +23,9 @@ main(Opts) ->
     anvl_config:read_global_config(Opts),
     maybe_show_help_and_exit(),
     set_logger_settings(),
-    case anvl_main(Opts) of
-      ok ->
-        ?log(notice, "Build success", []),
-        halt(0)%;
-      %% error ->
-      %%   halt(1)
-    end
+    anvl_main(Opts),
+    ?log(notice, "Build success", []),
+    halt(0)
   catch
     exit:{panic, Fmt, Args}:Stack ->
       %% Panic is an expected outcome that is caused by the user
@@ -39,7 +35,9 @@ main(Opts) ->
       halt(1);
     EC:Err:Stack ->
       ?log( critical
-          , "Uncaught ~p in ~p: ~p~nStacktrace: ~p"
+          , "Uncaught ~p in ~p: ~p~n"
+            "Stacktrace: ~p~n"
+            "Please report this bug"
           , [EC, ?MODULE, Err, Stack]
           ),
       halt(1)
@@ -92,9 +90,9 @@ maybe_show_help_and_exit() ->
 -spec ensure_work_dirs() -> ok.
 ensure_work_dirs() ->
   %% WorkDir = ?cfg_dir([?proj, anvl_core, base_dir]),
-  %% CacheDir = ?cfg_dir([cache_dir]),
-  %% Dirs = [ filename:join(WorkDir, "bin")
-  %%        , filename:join(WorkDir, "lib")
-  %%        ],
-  %% lists:foreach(fun anvl_lib:ensure_dir/1, Dirs),
-  ok.
+  CacheDir = ?cfg_dir([cache_dir]),
+  Dirs = [ CacheDir
+         %% , filename:join(WorkDir, "bin")
+         %% , filename:join(WorkDir, "lib")
+         ],
+  lists:foreach(fun anvl_lib:ensure_dir/1, Dirs).
