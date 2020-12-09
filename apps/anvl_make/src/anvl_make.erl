@@ -7,7 +7,7 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
--export([start_link/0, want/1, provide/1]).
+-export([parallel/1, start_link/0, want/1, provide/1]).
 
 -export_type([tag/0, target/0]).
 
@@ -42,6 +42,32 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%% @doc Run functions in parallel
+-spec parallel([fun(() -> A)]) -> [ {ok, A}
+                                  | {error | exit | throw, term(), list()}
+                                  ].
+parallel(L) ->
+  Parent = self(),
+  Refs =
+    [begin
+       Ref = make_ref(),
+       spawn_link(
+         fun() ->
+             Result = try
+                        {ok, I()}
+                      catch
+                        EC:Err:Stack -> {EC, Err, Stack}
+                      end,
+             Parent ! {Ref, Result}
+         end),
+       Ref
+     end
+     || I <- L],
+  [receive
+     {Ref, Result} -> Result
+   end
+   || Ref <- Refs].
 
 %% @doc Block execution of the process until a dependency is
 %% satisfied, return value of the dependency
