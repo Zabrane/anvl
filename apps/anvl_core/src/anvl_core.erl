@@ -28,6 +28,7 @@ main(Opts) ->
     maybe_show_help_and_exit(),
     exec_hacking_commands(),
     set_logger_settings(),
+    ?log(debug, "Active plugins: ~p", [anvl_plugin:plugins()]),
     %% Execute targets:
     anvl_main(Opts),
     ?log(notice, "Build success", []),
@@ -75,7 +76,12 @@ halt(Code) ->
 set_logger_settings() ->
   logger:set_primary_config(#{ level => ?cfg([verbosity])
                              , filter_default => log
-                             }).
+                             }),
+  Formatter = {logger_formatter,
+               #{ single_line => true
+                , template => ["[", level, "] ", msg, "\n"]
+                }},
+  logger:update_handler_config(default, formatter, Formatter).
 
 -spec anvl_main([string()]) -> ok | error.
 anvl_main(Opts) ->

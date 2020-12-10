@@ -105,9 +105,8 @@ load_models() ->
 merged_project_model() ->
   ProjectModels = [patch_project_model(anvl_plugin:project_model(P))
                    || P <- anvl_plugin:plugins()],
-  %% We know that project namespaces don't collide, hence regular map
-  %% merge is fine:
-  lists:foldl(fun maps:merge/2, #{}, ProjectModels).
+  {ok, Model} = lee_model:merge(ProjectModels),
+  Model.
 
 -spec read_global_config([string()]) -> ok.
 read_global_config(Opts) ->
