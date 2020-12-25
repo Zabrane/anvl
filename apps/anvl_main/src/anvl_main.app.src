@@ -1,4 +1,4 @@
-{application, anvl_core,
+{application, anvl_main,
  [{description, "An OTP application"},
   {vsn, "git"},
   {registered, []},

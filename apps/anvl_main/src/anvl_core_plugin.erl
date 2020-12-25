@@ -19,7 +19,21 @@ model() ->
          , doc => anvl_description()
          , prog_name => "anvl"
          }}
-
+   , root_dir =>
+       {[value, cli_param],
+        #{ oneliner => "Root directory of the project"
+         , type => string()
+         , default => "."
+         , cli_operand => "dir"
+         , cli_short => $D
+         }}
+   , build_dir =>
+       {[value, mustache, cli_param],
+        #{ oneliner => "Directory where build artifacts are stored"
+         , type     => string()
+         , default  => "{{cfg: [root_dir]}}/_abuild/{{cfg: [profile]}}"
+         , cli_operand => "build-dir"
+         }}
    , cache_dir =>
        {[value, mustache, os_env],
         #{ oneliner => "Directory where global caches are located"
@@ -28,22 +42,6 @@ model() ->
          , os_env => "ANVL_CACHE_DIR"
          , doc_remark => "Default value is platform-dependent."
          }}
-   %% , parallel_tasks =>
-   %%     {[value, cli_param],
-   %%      #{ oneliner => "Limit the number of parallel jobs"
-   %%       , type => non_neg_integer()
-   %%       , default => 0
-   %%       , cli_short => "j"
-   %%       , doc_remark => "0 denotes unlimited"
-   %%       }}
-   %% , keep_going =>
-   %%     {[value, cli_param],
-   %%      #{ oneliner => "Keep scheduling new tasks after failure is detected"
-   %%       , type => boolean()
-   %%       , default => false
-   %%       , cli_operand => "keep-going"
-   %%       , cli_short => "K"
-   %%       }}
    , always_make =>
        {[value, cli_param],
         #{ oneliner => "Unconditionally make all targets"
@@ -71,8 +69,8 @@ model() ->
        #{ oneliner => "Verbosity of console output"
         , type => anvl:log_level()
         , default => notice
-        , cli_short => $v
         , cli_operand => "verbosity"
+        , cli_short => $v
         }}
    , profile =>
        {[value, cli_param],
@@ -103,21 +101,7 @@ model() ->
 
 -spec project_model() -> lee:module().
 project_model() ->
-  #{ base_dir =>
-       {[value, mustache],
-        #{ oneliner => "Directory where build artifacts are stored"
-         , type     => string()
-         , default  => "_abuild/{{cfg: [profile]}}"
-         , file_key => base_dir
-         }}
-   , root_dir =>
-       {[value, mustache, anvl],
-        #{ oneliner => "Directory where project files are located"
-         , type     => string()
-         , default  => "."
-         , file_key => root_dir
-         }}
-   , checkouts_dir =>
+  #{ checkouts_dir =>
        {[value, mustache, anvl],
         #{ oneliner => "Directory where checkouts are located"
          , type => string()

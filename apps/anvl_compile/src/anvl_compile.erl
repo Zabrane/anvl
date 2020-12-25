@@ -1,6 +1,6 @@
 -module(anvl_compile).
 
--include_lib("anvl_core/include/anvl.hrl").
+-include_lib("anvl_main/include/anvl.hrl").
 
 -behavior(anvl_plugin).
 
@@ -51,10 +51,11 @@ root_targets() ->
 %%% API
 %%%===================================================================
 
--spec compile_app(anvl_core:app_id()) -> anvl_make:target().
+-spec compile_app(anvl:app_id()) -> anvl_make:target().
 compile_app(App) ->
   {?MODULE, do_compile_app, [App]}.
 
--spec do_compile_app(anvl_core:app_id()) -> ok.
+-spec do_compile_app(anvl:app_id()) -> ok.
 do_compile_app(App) ->
-  ?log(notice, "Compiling ~p", [App]).
+  ?log(notice, "Compiling ~p", [App]),
+  ok.

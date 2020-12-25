@@ -12,7 +12,7 @@ all: doc build
 
 .PHONY: build
 build:
-	rebar3 do dialyzer,eunit,escriptize
+	rebar3 do dialyzer,escriptize,eunit
 
 concuerror = $(CONCUERROR_RUN) -f $(BUILD_DIR)/concuerror+test/lib/anvl_make/test/concuerror_tests.beam -t $(1) || \
 	{ cat concuerror_report.txt; exit 1; }

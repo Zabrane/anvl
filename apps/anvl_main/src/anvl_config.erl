@@ -14,7 +14,7 @@
 -define(base_interface_modules, [ lee_cli
                                 , lee_consult
                                 , lee_os_env
-                                , anvl_core % TODO: -> anvl_mustache
+                                , anvl_main % TODO: -> anvl_mustache
                                 ]).
 
 %% TODO: Triple hack!
@@ -72,10 +72,6 @@ doc_options() ->
         ],
   Config = #{ metatypes  => MTs
             , run_pandoc => true
-            , app_name   => "ANVL"
-            %% , introduction => "<para>Anvl is a novel build system for Erlang
-            %%                    with focus on parallelism and user friendliness
-            %%                    </para>"
             }.
 
 -spec load_model() -> ok.
@@ -84,8 +80,14 @@ load_model() ->
                         [M:metamodel() || M <- ?base_interface_modules]],
   ModelFragments = [merged_project_model() |
                     [anvl_plugin:model(I) || I <- anvl_plugin:plugins()]],
-  {ok, Model} = lee_model:compile(MetaModelFragments, ModelFragments),
-  persistent_term:put(anvl_model, Model).
+  case lee_model:compile(MetaModelFragments, ModelFragments) of
+    {ok, Model} ->
+      persistent_term:put(anvl_model, Model);
+    {error, Errors} ->
+      anvl:panic( "Failed to load configuration model. Buggy plugin?~n~s"
+                , [string:join(Errors, "\n")]
+                )
+  end.
 
 -spec merged_project_model() -> lee:module().
 merged_project_model() ->

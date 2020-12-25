@@ -1,4 +1,4 @@
--module(anvl_core).
+-module(anvl_main).
 
 -compile({no_auto_import, [halt/1]}).
 
@@ -22,7 +22,7 @@ main(Opts) ->
     anvl_config:init(),
     %% Load configuration:
     anvl_config:read_global_config(Opts),
-    ProjectDir = ?cfg_dir([?proj, anvl_core_plugin, root_dir]),
+    ProjectDir = ?cfg_dir([root_dir]),
     anvl_config:read_project_config(ProjectDir),
     %% Execute special commands if needed:
     maybe_show_help_and_exit(),
@@ -99,7 +99,7 @@ maybe_show_help_and_exit() ->
 
 -spec ensure_work_dirs() -> ok.
 ensure_work_dirs() ->
-  %% WorkDir = ?cfg_dir([?proj, anvl_core, base_dir]),
+  %% WorkDir = ?cfg_dir([?proj, anvl_main, base_dir]),
   CacheDir = ?cfg_dir([cache_dir]),
   Dirs = [ CacheDir
          %% , filename:join(WorkDir, "bin")

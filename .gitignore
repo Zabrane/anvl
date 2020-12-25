@@ -15,3 +15,5 @@ rel/example_project
 .rebar
 concuerror_report.txt
 TAGS
+_build
+docs/

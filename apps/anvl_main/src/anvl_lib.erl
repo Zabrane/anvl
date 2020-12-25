@@ -129,7 +129,7 @@ try_get_cfg(Key) ->
       throw(lee_lib:format("Invalid configuration key: ~p", [Key]))
   end.
 
--spec locate_app(anvl_core:app_id()) -> {ok, file:filename()} | undefined.
+-spec locate_app(anvl:app_id()) -> {ok, file:filename()} | undefined.
 locate_app(App) ->
   CheckoutsDir = ?cfg([?proj, checkouts_dir]),
   Checkouts = render_dirs(filename:join(CheckoutsDir, "*")),

@@ -21,6 +21,8 @@
 
 -define(DONE_TAB, anvl_done_tab).
 
+-define(anvl_task, anvl_task).
+
 -type tag() :: atom().
 
 -type target() :: {module(), atom(), list()}.
@@ -147,6 +149,9 @@ terminate(_Reason, _State) ->
 -spec do_want(target(), from(), #s{}) -> {noreply, #s{}}
                                        | {reply, _, #s{}}.
 do_want(Target, From = {Pid, _}, State0) ->
+  ?tp(anvl_depend, #{ source => get(?anvl_task)
+                    , target => Target
+                    }),
   case ets:lookup(?DONE_TAB, Target) of
     [Result] ->
       %% Handle a race condition:
@@ -165,6 +170,7 @@ do_want(Target, From = {Pid, _}, State0) ->
                     true ->
                      Workers0
                  end,
+      %% Mark worker as blocked:
       Workers = case Workers1 of
                   #{Pid := _} -> Workers1 #{Pid => true};
                   _           -> Workers1
@@ -179,7 +185,7 @@ do_want(Target, From = {Pid, _}, State0) ->
 -spec resolve_target({target(), term()}, #s{}) -> #s{}.
 resolve_target(Entry = {Target, Result}, State0) ->
   ets:insert(?DONE_TAB, Entry),
-  #s{promises = Promises0} = State0,
+  #s{promises = Promises0, workers = Workers0} = State0,
   {#promise{waiting = Waiting}, Promises} = maps:take(Target, Promises0),
   [gen_server:reply(From, Result) || From <- Waiting],
   State0#s{promises = Promises}.
@@ -201,6 +207,7 @@ maybe_spawn_worker(Target, From, Promises) ->
 spawn_worker(Target = {Module, Function, Args}) ->
   spawn_link(fun() ->
                  %logger:update_process_metadata(#{domain => [anvl, target, Module]}),
+                 put(?anvl_task, Target),
                  ?tp(anvl_spawn_task,
                      #{ target => Target
                       }),
@@ -223,6 +230,7 @@ handle_failure(Pid, Reason, State) ->
 
 -spec check_progress(#s{}) -> ok.
 check_progress(#s{workers = Workers, promises = Promises}) ->
+  %% TODO: broken by parallel.
   case maps:size(Promises) of
     0 ->
       ok;
