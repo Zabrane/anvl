@@ -105,8 +105,7 @@ load_models() ->
 merged_project_model() ->
   ProjectModels = [patch_project_model(anvl_plugin:project_model(P))
                    || P <- anvl_plugin:plugins()],
-  {ok, Model} = lee_model:merge(ProjectModels),
-  Model.
+  lists:foldl(fun maps:merge/2, #{}, ProjectModels).
 
 -spec read_global_config([string()]) -> ok.
 read_global_config(Opts) ->
@@ -184,6 +183,8 @@ load_model(PersistentTermName, ModelFragments) ->
                 )
   end.
 
+-define(invalid_config_msg, "Invalid configuration.~n~s").
+
 -spec patch(lee:patch()) -> ok.
 patch(Patch) ->
   %% Updating config stored in persistent term is not really
@@ -192,10 +193,14 @@ patch(Patch) ->
   lee_storage:patch(?storage(?anvl_cfg_data), Patch),
   case lee:validate(get_model(), ?storage(?anvl_cfg_data)) of
     {ok, Warnings} ->
-      [?log(warning, "~s", [W]) || W <- Warnings],
+      Errors = [],
       ok;
     {error, Errors, Warnings} ->
-      [?log(critical, "~s", [E]) || E <- Errors],
-      [?log(warning, "~s", [W]) || W <- Warnings],
-      anvl:panic("Invalid configuration!", [])
+      ok
+  end,
+  [?log(error, ?invalid_config_msg, [E]) || E <- Errors],
+  [?log(warning, ?invalid_config_msg, [W]) || W <- Warnings],
+  case Errors of
+    [] -> ok;
+    _  -> anvl:panic("Invalid configuration!", [])
   end.

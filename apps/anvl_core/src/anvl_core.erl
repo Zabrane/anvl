@@ -19,8 +19,14 @@
 -spec main([string()]) -> no_return().
 main(Opts) ->
   try
-    anvl_config:init(),
+    %% Set basic logger settings:
+    Formatter = {logger_formatter,
+                 #{ single_line => false
+                  , template => ["[", level, "] ", msg, "\n"]
+                  }},
+    logger:update_handler_config(default, formatter, Formatter),
     %% Load configuration:
+    anvl_config:init(),
     anvl_config:read_global_config(Opts),
     ProjectDir = ?cfg_dir([root_dir]),
     anvl_config:read_project_config(?root_project, ProjectDir),
@@ -76,12 +82,7 @@ halt(Code) ->
 set_logger_settings() ->
   logger:set_primary_config(#{ level => ?cfg([verbosity])
                              , filter_default => log
-                             }),
-  Formatter = {logger_formatter,
-               #{ single_line => true
-                , template => ["[", level, "] ", msg, "\n"]
-                }},
-  logger:update_handler_config(default, formatter, Formatter).
+                             }).
 
 -spec anvl_main([string()]) -> ok | error.
 anvl_main(Opts) ->
