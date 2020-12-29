@@ -140,7 +140,7 @@ locate_app(App) ->
 getter_fun("cfg:" ++ Str) ->
   case typerefl:from_string(list(), Str) of
     {ok, Key} when is_list(Key) ->
-      {ok, Term} = try_get_cfg(Key),
+      Term = try_get_cfg(Key),
       {ok, lee_lib:term_to_string(Term)};
     _ ->
       throw("Invalid configuration key: " ++ Str)

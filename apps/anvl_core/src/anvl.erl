@@ -16,7 +16,7 @@
 
 -type app_id() :: atom().
 
--type package_id() :: ?root_project | {dep, atom()}.
+-type package_id() :: ?root_project | atom().
 
 -type props(K, V) :: [{K, V}] | #{K => V}.
 

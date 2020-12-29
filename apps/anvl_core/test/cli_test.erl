@@ -11,7 +11,7 @@
 %%%===================================================================
 
 gen_docs_test() ->
-  ?assertMatch(0, exec(?BINARY " @anvl_mkdoc")).
+  ?assertMatch(0, exec("@anvl_mkdoc -o docs")).
 
 %%%===================================================================
 %%% Internal functions
@@ -19,8 +19,10 @@ gen_docs_test() ->
 
 %% @doc Execute an external executable `Executable' with args `Args'
 %% and return the exit status
--spec exec(file:filename()) -> integer().
-exec(CMD) ->
+
+-spec exec(string()) -> integer().
+exec(Args) ->
+  CMD = ?BINARY ++ [$ |Args],
   Port = open_port( {spawn, CMD}
                   , [ exit_status
                     , binary
@@ -36,7 +38,6 @@ collect_port_output(Port) ->
   %% together, do something about this.
   receive
     {Port, {data, Data}} ->
-      ?log(notice, "Port=~p~n~s", [Port, Data]),
       collect_port_output(Port);
     {Port, {exit_status, ExitStatus}} ->
       ExitStatus

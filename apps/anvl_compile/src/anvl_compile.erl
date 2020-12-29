@@ -1,6 +1,6 @@
 -module(anvl_compile).
 
--include_lib("anvl_main/include/anvl.hrl").
+-include_lib("anvl_core/include/anvl.hrl").
 
 -behavior(anvl_plugin).
 
@@ -16,31 +16,31 @@
 %%%===================================================================
 
 model() ->
-  Model =
-    #{ action =>
-         {[map, cli_action],
-          #{ cli_operand => "compile"
-           , ?key_elements => [[apps]]
-           },
-          #{ apps =>
-               {[value, cli_positional],
-                #{ oneliner => "List of apps that should be compiled"
-                 , type     => list(anvl:app_id())
-                 , cli_arg_position => rest
-                 }}
-           }}
-     },
-  lee:namespace([?MODULE], Model).
+  #{compile =>
+      #{ action =>
+           {[map, cli_action],
+            #{ cli_operand => "compile"
+             , ?key_elements => [[apps]]
+             },
+            #{ apps =>
+                 {[value, cli_positional],
+                  #{ oneliner => "List of apps that should be compiled"
+                   , type     => list(anvl:app_id())
+                   , cli_arg_position => rest
+                   }}
+             }}
+       }}.
 
 project_model() ->
-  #{ erl_opts =>
-       {[value, rebar, anvl],
-        #{ oneliner => "Options passed to erlc"
-         , type     => list()
-         , default  => []
-         , file_key => erl_opts
-         }}
-   }.
+  #{compile =>
+      #{ erl_opts =>
+           {[value, rebar, anvl],
+            #{ oneliner => "Options passed to erlc"
+             , type     => list()
+             , default  => []
+             , file_key => erl_opts
+             }}
+       }}.
 
 root_targets() ->
   Keys = ?list_cfg([?MODULE, action, ?children]),

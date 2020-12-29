@@ -1,4 +1,4 @@
--module(anvl_main).
+-module(anvl_core).
 
 -compile({no_auto_import, [halt/1]}).
 
@@ -23,7 +23,7 @@ main(Opts) ->
     %% Load configuration:
     anvl_config:read_global_config(Opts),
     ProjectDir = ?cfg_dir([root_dir]),
-    anvl_config:read_project_config(ProjectDir),
+    anvl_config:read_project_config(?root_project, ProjectDir),
     %% Execute special commands if needed:
     maybe_show_help_and_exit(),
     exec_hacking_commands(),
@@ -70,7 +70,7 @@ metamodel() ->
 halt(Code) ->
   application:stop(anvl),
   application:stop(kernel),
-  init:stop(Code).
+  erlang:halt(Code).
 
 set_logger_settings() ->
   logger:set_primary_config(#{ level => ?cfg([verbosity])
@@ -79,6 +79,7 @@ set_logger_settings() ->
 
 -spec anvl_main([string()]) -> ok | error.
 anvl_main(Opts) ->
+  file:set_cwd(?cfg_dir([root_dir])),
   ensure_work_dirs(),
   anvl_make:start_link(),
   Targets = lists:flatmap(fun anvl_plugin:root_targets/1, anvl_plugin:plugins()),
@@ -100,10 +101,11 @@ maybe_show_help_and_exit() ->
 -spec ensure_work_dirs() -> ok.
 ensure_work_dirs() ->
   %% WorkDir = ?cfg_dir([?proj, anvl_main, base_dir]),
+  BuildDir = ?cfg_dir([build_dir]),
   CacheDir = ?cfg_dir([cache_dir]),
   Dirs = [ CacheDir
-         %% , filename:join(WorkDir, "bin")
-         %% , filename:join(WorkDir, "lib")
+         , filename:join(BuildDir, "bin")
+         , filename:join(BuildDir, "lib")
          ],
   lists:foreach(fun anvl_lib:ensure_dir/1, Dirs).
 
@@ -113,7 +115,8 @@ exec_hacking_commands() ->
     [K] ->
       ?cfg(K ++ [dump]) andalso
         ?tp(notice, anvl_dump_model,
-            #{ model => anvl_config:get_model()
+            #{ model         => anvl_config:get_model()
+             , project_model => anvl_config:get_project_model()
              });
     [] -> ok
   end,

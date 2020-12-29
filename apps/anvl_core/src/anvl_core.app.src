@@ -1,5 +1,5 @@
-{application, anvl_main,
- [{description, "An OTP application"},
+{application, anvl_core,
+ [{description, "Core framework of ANVL build system"},
   {vsn, "git"},
   {registered, []},
   {applications,

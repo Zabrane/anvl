@@ -13,6 +13,8 @@
 
 -define(cfg(KEY), anvl_config:get(KEY)).
 
+-define(proj_cfg(PROJECT, KEY), anvl_config:get_proj(PROJECT, KEY)).
+
 -define(list_cfg(KEY), anvl_config:list_cfg(KEY)).
 
 -define(cfg_template(KEY), anvl_lib:render_template(KEY)).
@@ -20,8 +22,16 @@
 -define(cfg_dir(KEY), anvl_lib:render_dir(?cfg(KEY))).
 -define(cfg_dirs(KEY), anvl_lib:render_dirs(?cfg(KEY))).
 
--define(root_project, root).
+-define(proj_cfg_dir(PROJECT, KEY), anvl_lib:render_dir(?proj_cfg(PROJECT, KEY))).
+-define(proj_cfg_dirs(PROJECT, KEY), anvl_lib:render_dirs(?proj_cfg(PROJECT, KEY))).
+
+-define(root_project, []). % Not using an atom to ensure a different domain
 
 -define(proj, project).
+
+-record(app_location,
+        { location :: file:name()
+        , overlay  :: atom()
+        }).
 
 -endif.

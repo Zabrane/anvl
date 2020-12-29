@@ -101,32 +101,49 @@ model() ->
 
 -spec project_model() -> lee:module().
 project_model() ->
-  #{ checkouts_dir =>
-       {[value, mustache, anvl],
-        #{ oneliner => "Directory where checkouts are located"
-         , type => string()
-         , default => "_checkouts"
-         , file_key => checkouts_dir
+  #{ id =>
+       {[undocumented, value],
+        #{ type => anvl:package_id()
          }}
-   , app_dirs =>
-       {[value, mustache, anvl, rebar],
-        #{ oneliner => "Directories where project applications are located"
-         , type => list(string())
-         , default => ["apps/*", "lib/*", "."]
-         , file_key => project_app_dirs
-         }}
-   , plugins =>
-       {[value, anvl],
-       #{ oneliner => "List of anvl plugins"
-         , type => list(anvl:plugin())
-         , default => []
-         , file_key => anvl_plugins
-         , doc_remark => "Anvl plugins are incompatible with the rebar3 providers"
-         }}
-   , overrides =>
-       {[value, anvl, rebar],
-        #{ oneliner => "TODO: not implemented"
-         , type => anvl:overrides()
+   , dirs =>
+       #{ checkouts =>
+            {[value, mustache, anvl],
+             #{ oneliner => "Directory where checkouts are located"
+              , type => string()
+              , default => "_checkouts"
+              , file_key => checkouts_dir
+              }}
+        , apps =>
+            {[value, mustache, anvl, rebar],
+             #{ oneliner => "Directories where project applications are located"
+              , type => list(string())
+              , default => ["apps/*", "lib/*", "."]
+              , file_key => project_app_dirs
+              }}
+        , src =>
+            {[value, anvl, rebar],
+             #{ oneliner => "Directories where source code of the applications is located"
+              , type => list(string())
+              , default => ["src"]
+              , file_key => src_dirs
+              }}
+        }
+   , rebar_plugins =>
+       {[value, rebar],
+       #{ oneliner => "Warning: not implemented by anvl"
+        , doc => "<para>List of rebar3 plugins. ANVL plugin interface is
+                  fundametally different from rebar3's, therefore it ignores
+                  this parameter.</para>"
+        , type => list()
+        , default => []
+        , file_key => anvl_plugins
+        }}
+   , rebar_overrides =>
+       {[value, rebar],
+        #{ oneliner => "Warning: not implemented by anvl"
+         , doc => "<para>List of configuration overrides for rebar3.
+                   Currently it's ignored by ANVL</para>"
+         , type => list()
          , default => []
          , file_key => overrides
          }}
@@ -139,17 +156,18 @@ project_model() ->
                       ]
          , file_key => default_targets
          }}
-   %% , package_id =>
-   %%     {[value],
-   %%      #{ oneliner => "ID of the project (set automatically)"
-   %%       , type => package_id()
-   %%       , undocumented => true
-   %%       }}
+   , deps =>
+       {[value, anvl, rebar],
+        #{ oneliner => "List of packages that this project depends on"
+         , type     => list(anvl_locate:dependency())
+         , default  => []
+         , file_key => deps
+         }}
    }.
 
 -spec root_targets() -> [anvl_make:target()].
 root_targets() ->
-  [].
+  [{anvl_locate, do_locate, []}].
 
 %%%===================================================================
 %%% Internal functions
@@ -218,7 +236,7 @@ hacking() ->
    }.
 
 anvl_description() ->
-"<para>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce
+  "<para>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce
 convallis nibh vel consectetur consequat. Nunc vitae ex eu lorem
 vulputate bibendum vel quis nibh. Maecenas vulputate purus a tincidunt
 bibendum. Proin scelerisque ligula elementum leo auctor, et accumsan
