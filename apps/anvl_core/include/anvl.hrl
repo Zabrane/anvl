@@ -34,4 +34,6 @@
         , overlay  :: atom()
         }).
 
+-define(what, '_what').
+
 -endif.

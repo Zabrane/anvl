@@ -77,9 +77,9 @@ app_list(PackageId, Location) ->
               [filelib:wildcard(filename:join([App, Src, "*.app.src"]))
                || App <- AppDirs, Src <- SrcDirs]),
   Apps = [list_to_atom(filename:basename(Path, ".app.src")) || Path <- AppSrcs],
-  ?slog(debug, #{ what => "Located applications in the project"
+  ?slog(debug, #{ ?what      => "Located applications in the project"
                 , package_id => PackageId
-                , apps => Apps
-                , location => Location
+                , apps       => Apps
+                , location   => Location
                 }),
   Apps.
