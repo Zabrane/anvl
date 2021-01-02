@@ -21,6 +21,8 @@
 
 -define(DONE_TAB, anvl_done_tab).
 
+-define(HOOK_TAB, anvl_hook_tab).
+
 -define(anvl_task, anvl_task).
 
 -type tag() :: atom().
@@ -111,6 +113,7 @@ start_link() ->
 init([]) ->
   process_flag(trap_exit, true),
   ets:new(?DONE_TAB, [protected, named_table]),
+  ets:new(?HOOK_TAB, [protected, named_table]),
   {ok, #s{}}.
 
 handle_call({want, Target}, From, State) ->
@@ -223,10 +226,16 @@ spawn_worker(Target = {Module, Function, Args}) ->
 complete(Pid) ->
   gen_server:cast(?SERVER, {complete, Pid}).
 
--spec handle_failure(pid(), _Reason, #s{}) -> {stop, _}.
+-spec handle_failure(pid(), _Reason, #s{}) -> no_return().
 handle_failure(Pid, Reason, State) ->
-  %% TODO:
-  error({target_failed, Reason}).
+  ?log(debug, "Target with pid=~p failed", [Pid]),
+  case Reason of
+    {panic, Format, Args} ->
+      anvl:panic(Format, Args);
+    _ ->
+      %% TODO:
+      error({target_failed, Reason})
+  end.
 
 -spec check_progress(#s{}) -> ok.
 check_progress(#s{workers = Workers, promises = Promises}) ->

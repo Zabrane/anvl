@@ -27,11 +27,17 @@
 
 -define(root_project, []). % Not using an atom to ensure a different domain
 
--define(proj, project).
+-record(app,
+        { id         :: anvl:app_id()
+        , location   :: file:name()
+        , package_id :: anvl:package_id()
+        }).
 
--record(app_location,
-        { location :: file:name()
-        , overlay  :: atom()
+-record(package,
+        { id               :: anvl:package_id()
+        , apps             :: [#app{}]
+        , location         :: file:name()
+        , volatile = false :: boolean()
         }).
 
 -define(what, '_what').

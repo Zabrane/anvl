@@ -7,8 +7,6 @@
         , render_dirs/1
 
         , ensure_dir/1
-
-        , locate_app/1
         ]).
 
 -define(recursion_depth, 5).
@@ -121,19 +119,13 @@ try_get_cfg(Key) ->
   try anvl_config:get(Key)
   catch
     EC:Err:Stack ->
-      ?slog(debug, #{ what => "Config read error"
+      ?slog(debug, #{ what        => "Config read error"
                     , error_class => EC
-                    , stacktrace => Stack
-                    , error => Err
+                    , stacktrace  => Stack
+                    , error       => Err
                     }),
       throw(lee_lib:format("Invalid configuration key: ~p", [Key]))
   end.
-
--spec locate_app(anvl:app_id()) -> {ok, file:filename()} | undefined.
-locate_app(App) ->
-  CheckoutsDir = ?cfg([?proj, checkouts_dir]),
-  Checkouts = render_dirs(filename:join(CheckoutsDir, "*")),
-  undefined.
 
 %% @private Look up data to fill in a template variable
 -spec getter_fun(string()) -> term().

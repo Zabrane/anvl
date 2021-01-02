@@ -22,7 +22,7 @@ main(Opts) ->
     %% Set basic logger settings:
     Formatter = {logger_formatter,
                  #{ single_line => false
-                  , template => ["[", level, "] ", msg, "\n"]
+                  , template => ["<", level, "> ", msg, "\n"]
                   }},
     logger:update_handler_config(default, formatter, Formatter),
     %% Load configuration:

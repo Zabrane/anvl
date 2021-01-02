@@ -1,7 +1,6 @@
 -module(anvl).
 
 -export([ panic/2
-        , locate_app/1
         ]).
 
 %%%===================================================================
@@ -42,7 +41,3 @@
 -spec panic(string(), term()) -> no_return().
 panic(Format, Args) ->
   exit({panic, Format, Args}).
-
--spec locate_app(app_id()) -> file:filename().
-locate_app(App) ->
-  filename:join([?cfg_dir([build_dir]), "lib", atom_to_list(App)]).
