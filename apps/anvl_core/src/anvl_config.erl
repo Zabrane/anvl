@@ -48,7 +48,7 @@ get(Key) ->
 
 -spec get_proj(anvl:project_id(), lee:key()) -> _.
 get_proj(Project, Key) ->
-  lee:get(get_model(), ?storage(?anvl_cfg_data), [project, ?lcl(Project)] ++ Key).
+  lee:get(get_model(), ?storage(?anvl_cfg_data), [project, {Project}] ++ Key).
 
 -spec list_cfg(lee:model_key()) -> [lee:key()].
 list_cfg(Key) ->
@@ -132,15 +132,15 @@ read_project_config(PackageId, Path) ->
               anvl:panic("Project configuration is not found in ~s", [Path])
           end,
   Patch0 = lists:flatmap(fun({Filename, Filter}) ->
-                             ?log(debug, "Reading project configuration from ~p", [Filename]),
+                             ?LOG(debug, "Reading project configuration from ~p", [Filename]),
                              lee_consult:read(get_project_model(), Filename, Filter)
                          end,
                          Files),
-  Patch1 = lists:map( fun({set, K, V}) -> {set, [project, ?lcl([PackageId])] ++ K, V} end
+  Patch1 = lists:map( fun({set, K, V}) -> {set, [project, {PackageId}] ++ K, V} end
                     , Patch0
                     ),
-  Patch = [{set, [project, ?lcl([PackageId]), id], PackageId}|Patch1],
-  ?log(debug, "Project config dump: ~p", Patch),
+  Patch = [{set, [project, {PackageId}, id], PackageId}|Patch1],
+  ?LOG(debug, "Project config dump: ~p", Patch),
   patch(Patch).
 
 -spec patch_project_model(lee:module()) -> lee:lee_module().
@@ -198,8 +198,8 @@ patch(Patch) ->
     {error, Errors, Warnings} ->
       ok
   end,
-  [?log(error, ?invalid_config_msg, [E]) || E <- Errors],
-  [?log(warning, ?invalid_config_msg, [W]) || W <- Warnings],
+  [?LOG(error, ?invalid_config_msg, [E]) || E <- Errors],
+  [?LOG(warning, ?invalid_config_msg, [W]) || W <- Warnings],
   case Errors of
     [] -> ok;
     _  -> anvl:panic("Invalid configuration!", [])

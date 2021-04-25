@@ -2,7 +2,7 @@
 
 -export([gen_docs_test/0]).
 
--include_lib("hut/include/hut.hrl").
+-include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -define(BINARY, "_build/default/bin/anvl").
 
@@ -29,7 +29,7 @@ exec(Args) ->
                     , stderr_to_stdout
                     ]
                   ),
-  ?log(debug, "port_command ~p: ~s ~p", [Port, CMD]),
+  ?LOG(debug, "port_command ~p: ~s ~p", [Port, CMD]),
   collect_port_output(Port).
 
 -spec collect_port_output(port()) -> integer().

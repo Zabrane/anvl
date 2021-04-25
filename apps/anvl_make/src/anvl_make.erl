@@ -4,6 +4,7 @@
 
 -behaviour(gen_server).
 
+-include_lib("kernel/include/logger.hrl").
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
@@ -14,8 +15,6 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2]).
-
--include_lib("hut/include/hut.hrl").
 
 -define(SERVER, ?MODULE).
 
@@ -237,7 +236,7 @@ complete(Pid) ->
 
 -spec handle_failure(pid(), _Reason, #s{}) -> no_return().
 handle_failure(Pid, Reason, State) ->
-  ?log(debug, "Target with pid=~p failed", [Pid]),
+  ?LOG(debug, "Target with pid=~p failed", [Pid]),
   case Reason of
     {panic, Format, Args} ->
       anvl:panic(Format, Args);

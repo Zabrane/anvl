@@ -50,7 +50,7 @@ do_prepare_src(App) ->
 
 -spec do_prepare_all() -> [#package{}].
 do_prepare_all() ->
-  ?log(notice, "Resolving dependencies..."),
+  ?LOG(notice, "Resolving dependencies..."),
   [current_project()].
 
 -spec current_project() -> #package{}.

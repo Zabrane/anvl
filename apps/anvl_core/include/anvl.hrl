@@ -4,7 +4,7 @@
 
 -include_lib("anvl_make/include/anvl_make.hrl").
 
--include_lib("hut/include/hut.hrl").
+-include_lib("kernel/include/logger.hrl").
 -include_lib("lee/include/lee.hrl").
 -include_lib("typerefl/include/types.hrl").
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").

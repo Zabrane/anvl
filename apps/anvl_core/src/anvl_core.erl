@@ -34,20 +34,20 @@ main(Opts) ->
     maybe_show_help_and_exit(),
     exec_hacking_commands(),
     set_logger_settings(),
-    ?log(debug, "Active plugins: ~p", [anvl_plugin:plugins()]),
+    ?LOG(debug, "Active plugins: ~p", [anvl_plugin:plugins()]),
     %% Execute targets:
     anvl_main(Opts),
-    ?log(notice, "Build success", []),
+    ?LOG(notice, "Build success", []),
     halt(0)
   catch
     exit:{panic, Fmt, Args}:Stack ->
       %% Panic is an expected outcome that is caused by the user
       %% errors:
-      ?log(critical, "Build aborted: " ++ Fmt, Args),
-      ?log(debug, "Panic stacktrace: ~p", [Stack]),
+      ?LOG(critical, "Build aborted: " ++ Fmt, Args),
+      ?LOG(debug, "Panic stacktrace: ~p", [Stack]),
       halt(1);
     EC:Err:Stack ->
-      ?log( critical
+      ?LOG( critical
           , "Uncaught ~p in ~p: ~p~n"
             "Please report this bug~n"
             "Stacktrace: ~p~n"
@@ -90,9 +90,9 @@ anvl_main(Opts) ->
   ensure_work_dirs(),
   anvl_make:start_link(),
   Targets = lists:flatmap(fun anvl_plugin:root_targets/1, anvl_plugin:plugins()),
-  ?log(debug, "Targets to execute: ~p", [Targets]),
+  ?LOG(debug, "Targets to execute: ~p", [Targets]),
   Out = anvl_make:wants(Targets),
-  ?log(debug, "Target results: ~p", [Out]),
+  ?LOG(debug, "Target results: ~p", [Out]),
   ok.
 
 -spec maybe_show_help_and_exit() -> ok.
@@ -137,7 +137,7 @@ exec_hacking_commands() ->
   end,
   case ?list_cfg([hacking, docs, ?children]) of
     [_] ->
-      ?log(notice, "Generating documentation", []),
+      ?LOG(notice, "Generating documentation", []),
       anvl_config:mk_doc();
     [] -> ok
   end.
