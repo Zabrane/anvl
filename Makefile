@@ -20,7 +20,6 @@ concuerror = $(CONCUERROR_RUN) -f $(BUILD_DIR)/concuerror+test/lib/anvl_make/tes
 .PHONY: concuerror_test
 concuerror_test: $(CONCUERROR)
 	rebar3 as concuerror eunit
-	$(call concuerror,parallel_test)
 	$(call concuerror,dependency_test)
 
 $(CONCUERROR):

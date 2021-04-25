@@ -31,14 +31,6 @@ dependency_test() ->
          anvl_trace_specs:check_dependencies(Deps, Trace)
      end).
 
-parallel_test() ->
-  Ret = anvl_make:parallel([ fun() -> 1 end
-                           , fun() -> exit(2) end
-                           , fun() -> throw(3) end
-                           , fun() -> error(4) end
-                           ]),
-  ?assertMatch([{ok, 1}, {exit, 2, _}, {throw, 3, _}, {error, 4, _}], Ret).
-
 %% Targets:
 foo(Id, Deps) ->
   ?deftarget({?MODULE, mk_foo, [Id, Deps]}).

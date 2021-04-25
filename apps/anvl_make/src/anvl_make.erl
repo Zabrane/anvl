@@ -8,7 +8,7 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
--export([parallel/1, start_link/0, want/1, wants/1, provide/1, id/1]).
+-export([start_link/0, want/1, kick_off/1, wants/1, provide/1, id/1]).
 
 -export_type([tag/0, recipe/0, target/1]).
 
@@ -55,51 +55,33 @@
 id(A) ->
   A.
 
-%% @doc Run functions in parallel
--spec parallel([fun(() -> A)]) -> [ {ok, A}
-                                  | {error | exit | throw, term(), list()}
-                                  ].
-parallel(L) ->
-  Parent = self(),
-  Refs =
-    [begin
-       Ref = make_ref(),
-       spawn_link(
-         fun() ->
-             Result = try
-                        {ok, I()}
-                      catch
-                        EC:Err:Stack -> {EC, Err, Stack}
-                      end,
-             Parent ! {Ref, Result}
-         end),
-       Ref
-     end
-     || I <- L],
-  [receive
-     {Ref, Result} -> Result
-   end
-   || Ref <- Refs].
-
 %% @doc Block execution of the process until a dependency is
 %% satisfied, return value of the dependency
 -spec want(target(A)) -> A.
-want({Recipe, Id}) ->
+want({Recipe, _Id}) ->
   case ets:lookup(?DONE_TAB, Recipe) of
     [Result] ->
-      Id(Result);
+      Result;
     [] ->
-      Id(gen_server:call(?SERVER, {want, Recipe}, infinity))
+      gen_server:call(?SERVER, {want, Recipe}, infinity)
   end.
 
-%% @doc Block execution of the process until multiple dependencies are
-%% satisfied. Return the list of return values of each dependency in
-%% order
 -spec wants([target(A)]) -> [A].
 wants(Targets) ->
-  Results = parallel([fun() -> want(I) end
-                      || I <- Targets]),
-  lists:map(fun({ok, Result}) -> Result end, Results).
+  ok = kick_off(Targets),
+  [want(I) || I <- Targets].
+
+%% @doc Kick-off execution of several tasks, and return
+%% immediately.
+-spec kick_off([target(_)]) -> ok.
+kick_off(Targets) ->
+  [case ets:lookup(?DONE_TAB, Recipe) of
+     [_] ->
+       ok;
+     [] ->
+       gen_server:cast(?SERVER, {want, Recipe})
+   end || {Recipe, _Id} <- Targets],
+  ok.
 
 %% @doc Satisfy dependencies
 -spec provide([{recipe(), _Result}]) -> ok.
@@ -129,6 +111,8 @@ handle_call({want, Target}, From, State) ->
 handle_call(_Request, _From, State) ->
   {reply, {error, unknown_call}, State}.
 
+handle_cast({want, Target}, State) ->
+  do_want(Target, undefined, State);
 handle_cast({complete, Pid}, State0 = #s{workers = Workers}) ->
   unlink(Pid),
   State = State0#s{workers = maps:remove(Pid, Workers)},
@@ -157,9 +141,10 @@ terminate(_Reason, _State) ->
 %%% Internal functions
 %%%===================================================================
 
--spec do_want(recipe(), from(), #s{}) -> {noreply, #s{}}
-                                       | {reply, _, #s{}}.
-do_want(Target, From = {Pid, _}, State0) ->
+-spec do_want(recipe(), from() | undefined, #s{}) ->
+            {noreply, #s{}}
+          | {reply, _, #s{}}.
+do_want(Target, From, State0) ->
   ?tp(anvl_depend, #{ source => get(?anvl_task)
                     , target => Target
                     }),
@@ -182,10 +167,18 @@ do_want(Target, From = {Pid, _}, State0) ->
                      Workers0
                  end,
       %% Mark worker as blocked:
-      Workers = case Workers1 of
-                  #{Pid := _} -> Workers1 #{Pid => true};
-                  _           -> Workers1
-                end,
+      Workers =
+        case From of
+          {Pid, _} ->
+            case Workers1 of
+              #{Pid := _} ->
+                Workers1 #{Pid => true};
+              _ ->
+                Workers1
+            end;
+          undefined ->
+            Workers1
+        end,
       State = State0#s{ workers  = Workers
                       , promises = Promises
                       },
@@ -201,16 +194,20 @@ resolve_target(Entry = {Target, Result}, State0) ->
   [gen_server:reply(From, Result) || From <- Waiting],
   State0#s{promises = Promises}.
 
--spec maybe_spawn_worker(recipe(), from(), promises()) ->
+-spec maybe_spawn_worker(recipe(), from() | undefined, promises()) ->
         #promise{}.
 maybe_spawn_worker(Target, From, Promises) ->
+  Blocked = case From of
+              undefined -> [];
+              _         -> [From]
+            end,
   case Promises of
     #{Target := Promise0 = #promise{waiting = Waiting}} ->
-      Promise0#promise{waiting = [From|Waiting]};
+      Promise0#promise{waiting = Blocked ++ Waiting};
     _ ->
       Worker = spawn_worker(Target),
       #promise{ worker = Worker
-              , waiting = [From]
+              , waiting = Blocked
               }
   end.
 
