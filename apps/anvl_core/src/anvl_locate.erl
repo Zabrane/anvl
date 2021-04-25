@@ -36,9 +36,9 @@
 %%% API
 %%%===================================================================
 
--spec prepare_src(anvl:app_id()) -> #app{}.
+-spec prepare_src(anvl:app_id()) -> anvl_make:target(#app{}).
 prepare_src(App) ->
-  anvl_make:want({?MODULE, do_prepare_src, [App]}).
+  ?deftarget({?MODULE, do_prepare_src, [App]}).
 
 %%%===================================================================
 %%% Internal functions
@@ -46,8 +46,7 @@ prepare_src(App) ->
 
 -spec do_prepare_src(anvl:app_id()) -> #app{}.
 do_prepare_src(App) ->
-  Projects = anvl_make:want({?MODULE, do_prepare_all, []}),
-  error(1).
+  #app{}.
 
 -spec do_prepare_all() -> [#package{}].
 do_prepare_all() ->

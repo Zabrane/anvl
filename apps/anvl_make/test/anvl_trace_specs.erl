@@ -9,8 +9,9 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% @doc Check that all tasks from the list have completed:
--spec tasks_started([anvl_make:target()], snabbkaffe:trace()) -> true.
-tasks_started(Tasks, Trace) ->
+-spec tasks_started([anvl_make:target(_)], snabbkaffe:trace()) -> true.
+tasks_started(Tasks0, Trace) ->
+  {Tasks, _} = lists:unzip(Tasks0),
   ?projection_complete( target
                       , ?of_kind(anvl_spawn_task, Trace)
                       , Tasks

@@ -34,7 +34,7 @@
 builtin_plugins() ->
   [anvl_core_plugin, anvl_compile].
 
--spec root_targets(anvl:plugin()) -> [anvl_make:target()].
+-spec root_targets(anvl:plugin()) -> [anvl_make:target(_)].
 root_targets(Plugin) ->
   Plugin:root_targets().
 

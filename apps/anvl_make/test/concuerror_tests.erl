@@ -1,5 +1,6 @@
 -module(concuerror_tests).
 
+-include("anvl_make.hrl").
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 -include_lib("stdlib/include/assert.hrl").
 
@@ -40,10 +41,10 @@ parallel_test() ->
 
 %% Targets:
 foo(Id, Deps) ->
-  {?MODULE, mk_foo, [Id, Deps]}.
+  ?deftarget({?MODULE, mk_foo, [Id, Deps]}).
 
 bar(Id) ->
-  {?MODULE, mk_bar, [Id]}.
+  ?deftarget({?MODULE, mk_bar, [Id]}).
 
 %% Providers:
 mk_foo(Id, Deps) ->

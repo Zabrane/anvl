@@ -7,9 +7,9 @@
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
 
 %% API
--export([parallel/1, start_link/0, want/1, wants/1, provide/1]).
+-export([parallel/1, start_link/0, want/1, wants/1, provide/1, id/1]).
 
--export_type([tag/0, target/0]).
+-export_type([tag/0, recipe/0, target/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -27,7 +27,10 @@
 
 -type tag() :: atom().
 
--type target() :: {module(), atom(), list()}.
+-type recipe() :: {module(), atom(), list()}.
+
+%% The second argument must be `id'
+-type target(A) :: {recipe(), fun((A) -> A)}.
 
 -type from() :: {pid(), _Tag}.
 
@@ -36,7 +39,7 @@
         , waiting = [] :: list()
         }).
 
--type promises() :: #{target() => #promise{}}.
+-type promises() :: #{recipe() => #promise{}}.
 
 -record(s,
         { promises = #{} :: promises()
@@ -46,6 +49,12 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%% This function is needed as a hack to guide dialyzer into inferring
+%% the correct types.
+-spec id(A) -> A.
+id(A) ->
+  A.
 
 %% @doc Run functions in parallel
 -spec parallel([fun(() -> A)]) -> [ {ok, A}
@@ -75,26 +84,26 @@ parallel(L) ->
 
 %% @doc Block execution of the process until a dependency is
 %% satisfied, return value of the dependency
--spec want(target()) -> term().
-want(Target) ->
-  case ets:lookup(?DONE_TAB, Target) of
+-spec want(target(A)) -> A.
+want({Recipe, Id}) ->
+  case ets:lookup(?DONE_TAB, Recipe) of
     [Result] ->
-      Result;
+      Id(Result);
     [] ->
-      gen_server:call(?SERVER, {want, Target}, infinity)
+      Id(gen_server:call(?SERVER, {want, Recipe}, infinity))
   end.
 
 %% @doc Block execution of the process until multiple dependencies are
 %% satisfied. Return the list of return values of each dependency in
 %% order
--spec wants([target()]) -> [term()].
+-spec wants([target(A)]) -> [A].
 wants(Targets) ->
   Results = parallel([fun() -> want(I) end
                       || I <- Targets]),
   lists:map(fun({ok, Result}) -> Result end, Results).
 
 %% @doc Satisfy dependencies
--spec provide([{target(), term()}]) -> ok.
+-spec provide([{recipe(), _Result}]) -> ok.
 provide(Targets) ->
   gen_server:cast(?SERVER, {provide, Targets}).
 
@@ -149,7 +158,7 @@ terminate(_Reason, _State) ->
 %%% Internal functions
 %%%===================================================================
 
--spec do_want(target(), from(), #s{}) -> {noreply, #s{}}
+-spec do_want(recipe(), from(), #s{}) -> {noreply, #s{}}
                                        | {reply, _, #s{}}.
 do_want(Target, From = {Pid, _}, State0) ->
   ?tp(anvl_depend, #{ source => get(?anvl_task)
@@ -185,7 +194,7 @@ do_want(Target, From = {Pid, _}, State0) ->
       {noreply, State}
   end.
 
--spec resolve_target({target(), term()}, #s{}) -> #s{}.
+-spec resolve_target({recipe(), _Result}, #s{}) -> #s{}.
 resolve_target(Entry = {Target, Result}, State0) ->
   ets:insert(?DONE_TAB, Entry),
   #s{promises = Promises0, workers = Workers0} = State0,
@@ -193,7 +202,7 @@ resolve_target(Entry = {Target, Result}, State0) ->
   [gen_server:reply(From, Result) || From <- Waiting],
   State0#s{promises = Promises}.
 
--spec maybe_spawn_worker(target(), from(), promises()) ->
+-spec maybe_spawn_worker(recipe(), from(), promises()) ->
         #promise{}.
 maybe_spawn_worker(Target, From, Promises) ->
   case Promises of
@@ -206,7 +215,7 @@ maybe_spawn_worker(Target, From, Promises) ->
               }
   end.
 
--spec spawn_worker(target()) -> pid().
+-spec spawn_worker(recipe()) -> pid().
 spawn_worker(Target = {Module, Function, Args}) ->
   spawn_link(fun() ->
                  %logger:update_process_metadata(#{domain => [anvl, target, Module]}),

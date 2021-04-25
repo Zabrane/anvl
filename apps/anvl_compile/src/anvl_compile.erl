@@ -53,9 +53,11 @@ root_targets() ->
 
 -spec compile_app(anvl:app_id()) -> anvl_make:target().
 compile_app(App) ->
-  {?MODULE, do_compile_app, [App]}.
+  ?deftarget({?MODULE, do_compile_app, [App]}).
 
 -spec do_compile_app(anvl:app_id()) -> ok.
-do_compile_app(App) ->
+do_compile_app(AppId) ->
+  {D, Id} = anvl_locate:prepare_src(AppId),
+  App = ?want(anvl_locate:prepare_src(AppId)).
   ?log(notice, "Compiling ~p", [App]),
-  ok.
+  App.

@@ -167,7 +167,7 @@ project_model() ->
 
 -spec root_targets() -> [anvl_make:target()].
 root_targets() ->
-  [{anvl_locate, do_prepare_all, []}].
+  [].
 
 %%%===================================================================
 %%% Internal functions

@@ -1,15 +1,13 @@
 -ifndef(ANVL_HRL).
 -define(ANVL_HRL, 1).
 
+
+-include_lib("anvl_make/include/anvl_make.hrl").
+
 -include_lib("hut/include/hut.hrl").
 -include_lib("lee/include/lee.hrl").
 -include_lib("typerefl/include/types.hrl").
 -include_lib("snabbkaffe/include/snabbkaffe.hrl").
-
--record(td_task,
-        { provider   :: module()
-        , data       :: term()
-        }).
 
 -define(cfg(KEY), anvl_config:get(KEY)).
 
